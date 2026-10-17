@@ -4,7 +4,7 @@ A C++20 matching engine with FIX order entry and sequenced market data.
 
 ## Current implementation
 
-Build scaffold; implementation follows.
+- SPSC queue interface (mutex-backed)
 
 ## Build
 
