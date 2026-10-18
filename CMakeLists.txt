@@ -28,3 +28,17 @@ find_package(Threads REQUIRED)
 add_library(mx_core INTERFACE)
 target_include_directories(mx_core INTERFACE src)
 target_link_libraries(mx_core INTERFACE Threads::Threads)
+if(MX_BUILD_TESTS)
+  enable_testing()
+  include(FetchContent)
+  FetchContent_Declare(googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz)
+  set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+  include(GoogleTest)
+  add_executable(unit_tests
+    tests/test_spsc_queue.cpp
+  )
+  target_link_libraries(unit_tests PRIVATE mx_core GTest::gtest_main)
+  gtest_discover_tests(unit_tests)
+endif()
