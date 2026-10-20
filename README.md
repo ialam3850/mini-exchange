@@ -6,6 +6,7 @@ A C++20 matching engine with FIX order entry and sequenced market data.
 
 - SPSC queue interface (mutex-backed)
 - Chunked order and price-level storage
+- Sorted price levels and FIFO order links
 
 ## Build
 
