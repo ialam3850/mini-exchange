@@ -26,6 +26,7 @@ if(MX_TSAN)
 endif()
 find_package(Threads REQUIRED)
 add_library(mx_core
+  src/engine/matching_engine.cpp
   src/engine/order_book.cpp
 )
 target_include_directories(mx_core PUBLIC src)
