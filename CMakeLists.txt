@@ -40,6 +40,7 @@ if(MX_BUILD_TESTS)
   FetchContent_MakeAvailable(googletest)
   include(GoogleTest)
   add_executable(unit_tests
+    tests/test_regressions.cpp
     tests/test_spsc_queue.cpp
   )
   target_link_libraries(unit_tests PRIVATE mx_core GTest::gtest_main)
