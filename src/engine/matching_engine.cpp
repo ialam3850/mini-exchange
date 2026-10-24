@@ -15,7 +15,7 @@ bool is_stop(OrdType t) {
 }
 
 bool crosses(Side aggressor, Price limit, Price level_px) {
-  return aggressor == Side::Buy ? level_px <= limit : level_px > limit;
+  return aggressor == Side::Buy ? level_px <= limit : level_px >= limit;
 }
 
 }
