@@ -29,3 +29,10 @@ TEST(Regression, CancelKeepsNeighbor) {
   EXPECT_NE(me.find(b), nullptr);
   EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({b}));
 }
+
+TEST(Regression, SellAtTouch) {
+  MatchingEngine me(1);
+  submit(me, limit(1, Side::Buy, 10000, 10));
+  me.process(limit(2, Side::Sell, 10000, 5));
+  EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
+}
