@@ -19,3 +19,13 @@ TEST(Regression, EqualPriceCrosses) {
   me.process(limit(2, Side::Buy, 10000, 5));
   EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
 }
+
+TEST(Regression, CancelKeepsNeighbor) {
+  MatchingEngine me(1);
+  auto a = submit(me, limit(1, Side::Buy, 10000, 10));
+  auto b = submit(me, limit(1, Side::Buy, 10000, 20));
+  me.process(cancel(1, a));
+  EXPECT_EQ(me.find(a), nullptr);
+  EXPECT_NE(me.find(b), nullptr);
+  EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({b}));
+}
