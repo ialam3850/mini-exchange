@@ -171,7 +171,21 @@ void MatchingEngine::execute(Order* o, std::uint64_t client_ref) {
 void MatchingEngine::run_stops(OrderBook&) {}
 
 void MatchingEngine::on_cancel(const Request& r) {
-  reject(ExecType::CancelRejected, RejectReason::UnsupportedChange, r);
+  auto it = orders_.find(r.order_id);
+  if (it == orders_.end()) return reject(ExecType::CancelRejected, RejectReason::UnknownOrder, r);
+  Order* o = it->second;
+  if (o->owner != r.owner) return reject(ExecType::CancelRejected, RejectReason::NotOwner, r);
+
+  OrderBook& book = *books_[o->symbol];
+  if (o->is_stop_pending) {
+    book.remove_stop(o);
+  } else {
+    md_.push_back(MdEvent{MdType::Delete, o->side, o->symbol, o->id, o->price, 0});
+    book.remove(o);
+  }
+  o->leaves = 0;
+  report(ExecType::Cancelled, *o, r.client_ref);
+  destroy(o);
 }
 
 void MatchingEngine::on_replace(const Request& r) {
