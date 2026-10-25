@@ -36,3 +36,12 @@ TEST(Regression, SellAtTouch) {
   me.process(limit(2, Side::Sell, 10000, 5));
   EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
 }
+
+TEST(Regression, PassiveCumulativeFill) {
+  MatchingEngine me(1);
+  auto id = submit(me, limit(1, Side::Sell, 10000, 10));
+  me.process(limit(2, Side::Buy, 10000, 4));
+  ASSERT_NE(me.find(id), nullptr);
+  EXPECT_EQ(me.find(id)->leaves, 6u);
+  EXPECT_EQ(me.find(id)->cum, 4u);
+}
