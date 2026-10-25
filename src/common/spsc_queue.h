@@ -56,7 +56,7 @@ template<class T> class SpscQueue {
   static std::size_t round_capacity(std::size_t n) {
     if (n < 2) n = 2;
     std::size_t p = 2;
-    while (p * 2 <= n) p *= 2;
+    while (p < n) p *= 2;
     return p;
   }
   const std::size_t capacity_;
