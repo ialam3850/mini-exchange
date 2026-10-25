@@ -141,6 +141,7 @@ void MatchingEngine::execute(Order* o, std::uint64_t client_ref) {
     o->leaves -= q;
     o->cum += q;
     book.reduce(passive, q);
+    passive->cum += q;
 
     md_.push_back(MdEvent{MdType::Trade, o->side, o->symbol, passive->id, px, q});
     report(ExecType::Fill, *o, client_ref, /*aggressor=*/true, q, px);
