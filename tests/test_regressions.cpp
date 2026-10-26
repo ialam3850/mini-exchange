@@ -45,3 +45,19 @@ TEST(Regression, PassiveCumulativeFill) {
   EXPECT_EQ(me.find(id)->leaves, 6u);
   EXPECT_EQ(me.find(id)->cum, 4u);
 }
+
+TEST(Regression, MarketRemainderExpires) {
+  MatchingEngine me(1);
+  submit(me, limit(1, Side::Sell, 10000, 3));
+  me.process(market(2, Side::Buy, 5));
+  EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
+  EXPECT_EQ(of_type(me, ExecType::Expired).size(), 1u);
+  EXPECT_EQ(me.open_orders(), 0u);
+}
+
+TEST(Regression, IocDoesNotRest) {
+  MatchingEngine me(1);
+  me.process(limit(1, Side::Buy, 10000, 5, TimeInForce::Ioc));
+  EXPECT_EQ(me.open_orders(), 0u);
+  EXPECT_EQ(of_type(me, ExecType::Expired).size(), 1u);
+}

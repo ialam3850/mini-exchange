@@ -94,9 +94,8 @@ void MatchingEngine::destroy(Order* o) {
 }
 
 void MatchingEngine::on_new(const Request& r) {
-  if (!(r.ord_type == OrdType::Limit))
+  if (!(r.ord_type == OrdType::Limit || r.ord_type == OrdType::Market))
     return reject(ExecType::Rejected, RejectReason::UnsupportedChange, r);
-  if (r.tif == TimeInForce::Ioc) return reject(ExecType::Rejected, RejectReason::UnsupportedChange, r);
   if (r.tif == TimeInForce::Fok) return reject(ExecType::Rejected, RejectReason::UnsupportedChange, r);
   if (r.symbol >= books_.size()) return reject(ExecType::Rejected, RejectReason::UnknownSymbol, r);
   if (r.qty == 0 || r.qty > kMaxQty) return reject(ExecType::Rejected, RejectReason::InvalidQty, r);
