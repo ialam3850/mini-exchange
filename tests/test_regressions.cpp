@@ -61,3 +61,11 @@ TEST(Regression, IocDoesNotRest) {
   EXPECT_EQ(me.open_orders(), 0u);
   EXPECT_EQ(of_type(me, ExecType::Expired).size(), 1u);
 }
+
+TEST(Regression, FokAcceptsExactAvailableQuantity) {
+  MatchingEngine me(1);
+  submit(me, limit(1, Side::Sell, 10000, 5));
+  me.process(limit(2, Side::Buy, 10000, 5, TimeInForce::Fok));
+  EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
+  EXPECT_EQ(me.open_orders(), 0u);
+}

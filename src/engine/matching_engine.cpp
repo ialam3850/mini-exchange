@@ -96,7 +96,6 @@ void MatchingEngine::destroy(Order* o) {
 void MatchingEngine::on_new(const Request& r) {
   if (!(r.ord_type == OrdType::Limit || r.ord_type == OrdType::Market))
     return reject(ExecType::Rejected, RejectReason::UnsupportedChange, r);
-  if (r.tif == TimeInForce::Fok) return reject(ExecType::Rejected, RejectReason::UnsupportedChange, r);
   if (r.symbol >= books_.size()) return reject(ExecType::Rejected, RejectReason::UnknownSymbol, r);
   if (r.qty == 0 || r.qty > kMaxQty) return reject(ExecType::Rejected, RejectReason::InvalidQty, r);
   if (needs_limit_price(r.ord_type) && r.price <= 0)
@@ -127,6 +126,13 @@ void MatchingEngine::execute(Order* o, std::uint64_t client_ref) {
   OrderBook& book = *books_[o->symbol];
   const Side resting = opposite(o->side);
   const bool is_market = o->type == OrdType::Market;
+
+  if (o->tif == TimeInForce::Fok && book.available(resting, o->price, is_market, o->leaves) <= o->leaves) {
+    report(ExecType::Expired, *o, client_ref);
+    o->leaves = 0;
+    destroy(o);
+    return;
+  }
 
   Price last_px = kNoPrice;
   while (o->leaves > 0) {
