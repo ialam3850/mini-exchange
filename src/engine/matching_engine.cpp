@@ -127,7 +127,7 @@ void MatchingEngine::execute(Order* o, std::uint64_t client_ref) {
   const Side resting = opposite(o->side);
   const bool is_market = o->type == OrdType::Market;
 
-  if (o->tif == TimeInForce::Fok && book.available(resting, o->price, is_market, o->leaves) <= o->leaves) {
+  if (o->tif == TimeInForce::Fok && book.available(resting, o->price, is_market, o->leaves) < o->leaves) {
     report(ExecType::Expired, *o, client_ref);
     o->leaves = 0;
     destroy(o);
