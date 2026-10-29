@@ -195,7 +195,52 @@ void MatchingEngine::on_cancel(const Request& r) {
 }
 
 void MatchingEngine::on_replace(const Request& r) {
-  reject(ExecType::ReplaceRejected, RejectReason::UnsupportedChange, r);
+  auto it = orders_.find(r.order_id);
+  if (it == orders_.end()) return reject(ExecType::ReplaceRejected, RejectReason::UnknownOrder, r);
+  Order* o = it->second;
+  if (o->owner != r.owner) return reject(ExecType::ReplaceRejected, RejectReason::NotOwner, r);
+  if (r.side != o->side || r.symbol != o->symbol)
+    return reject(ExecType::ReplaceRejected, RejectReason::UnsupportedChange, r);
+  if (r.qty == 0 || r.qty > kMaxQty) return reject(ExecType::ReplaceRejected, RejectReason::InvalidQty, r);
+  if (r.qty <= o->cum) return reject(ExecType::ReplaceRejected, RejectReason::TooLateToReplace, r);
+  const Price new_price = needs_limit_price(o->type) ? r.price : 0;
+  if (needs_limit_price(o->type) && new_price <= 0)
+    return reject(ExecType::ReplaceRejected, RejectReason::InvalidPrice, r);
+
+  OrderBook& book = *books_[o->symbol];
+  const Qty new_leaves = r.qty - o->cum;
+
+  if (o->is_stop_pending) {
+    book.remove_stop(o);
+    o->price = new_price;
+    if (r.stop_price > 0) o->stop_price = r.stop_price;
+    o->qty = r.qty;
+    o->leaves = new_leaves;
+    report(ExecType::Replaced, *o, r.client_ref);
+    book.add_stop(o);
+    run_stops(book);
+    return;
+  }
+
+  // Only size reductions keep their place.
+  if (new_price == o->price) {
+    if (new_leaves < o->leaves) {
+      book.reduce(o, o->leaves - new_leaves);
+      md_.push_back(MdEvent{MdType::Modify, o->side, o->symbol, o->id, o->price, new_leaves});
+    }
+    o->qty = r.qty;
+    report(ExecType::Replaced, *o, r.client_ref);
+    return;
+  }
+
+  md_.push_back(MdEvent{MdType::Delete, o->side, o->symbol, o->id, o->price, 0});
+  book.remove(o);
+  o->price = new_price;
+  o->qty = r.qty;
+  o->leaves = new_leaves;
+  report(ExecType::Replaced, *o, r.client_ref);
+  execute(o, r.client_ref);
+  run_stops(book);
 }
 
 }

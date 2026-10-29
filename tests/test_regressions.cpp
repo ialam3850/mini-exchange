@@ -69,3 +69,13 @@ TEST(Regression, FokAcceptsExactAvailableQuantity) {
   EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
   EXPECT_EQ(me.open_orders(), 0u);
 }
+
+TEST(Regression, SizeReductionKeepsPriority) {
+  MatchingEngine me(1);
+  auto a = submit(me, limit(1, Side::Buy, 10000, 10));
+  auto b = submit(me, limit(1, Side::Buy, 10000, 10));
+  me.process(replace(1, a, Side::Buy, 10000, 5));
+  EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({a,b}));
+  ASSERT_NE(me.find(a), nullptr);
+  EXPECT_EQ(me.find(a)->leaves, 5u);
+}
