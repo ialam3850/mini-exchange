@@ -79,3 +79,13 @@ TEST(Regression, SizeReductionKeepsPriority) {
   ASSERT_NE(me.find(a), nullptr);
   EXPECT_EQ(me.find(a)->leaves, 5u);
 }
+
+TEST(Regression, SizeIncreaseLosesPriority) {
+  MatchingEngine me(1);
+  auto a = submit(me, limit(1, Side::Buy, 10000, 10));
+  auto b = submit(me, limit(1, Side::Buy, 10000, 10));
+  me.process(replace(1, a, Side::Buy, 10000, 20));
+  EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({b,a}));
+  ASSERT_NE(me.find(a), nullptr);
+  EXPECT_EQ(me.find(a)->leaves, 20u);
+}
