@@ -224,6 +224,11 @@ void MatchingEngine::on_replace(const Request& r) {
 
   // Only size reductions keep their place.
   if (new_price == o->price) {
+    if (new_leaves > o->leaves) {
+      o->level->total_qty += new_leaves - o->leaves;
+      o->leaves = new_leaves;
+      md_.push_back(MdEvent{MdType::Modify, o->side, o->symbol, o->id, o->price, new_leaves});
+    }
     if (new_leaves < o->leaves) {
       book.reduce(o, o->leaves - new_leaves);
       md_.push_back(MdEvent{MdType::Modify, o->side, o->symbol, o->id, o->price, new_leaves});
