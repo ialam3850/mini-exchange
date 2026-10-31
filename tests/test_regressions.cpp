@@ -45,3 +45,47 @@ TEST(Regression, PassiveCumulativeFill) {
   EXPECT_EQ(me.find(id)->leaves, 6u);
   EXPECT_EQ(me.find(id)->cum, 4u);
 }
+
+TEST(Regression, MarketRemainderExpires) {
+  MatchingEngine me(1);
+  submit(me, limit(1, Side::Sell, 10000, 3));
+  me.process(market(2, Side::Buy, 5));
+  EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
+  EXPECT_EQ(of_type(me, ExecType::Expired).size(), 1u);
+  EXPECT_EQ(me.open_orders(), 0u);
+}
+
+TEST(Regression, IocDoesNotRest) {
+  MatchingEngine me(1);
+  me.process(limit(1, Side::Buy, 10000, 5, TimeInForce::Ioc));
+  EXPECT_EQ(me.open_orders(), 0u);
+  EXPECT_EQ(of_type(me, ExecType::Expired).size(), 1u);
+}
+
+TEST(Regression, FokAcceptsExactAvailableQuantity) {
+  MatchingEngine me(1);
+  submit(me, limit(1, Side::Sell, 10000, 5));
+  me.process(limit(2, Side::Buy, 10000, 5, TimeInForce::Fok));
+  EXPECT_EQ(of_type(me, ExecType::Fill).size(), 2u);
+  EXPECT_EQ(me.open_orders(), 0u);
+}
+
+TEST(Regression, SizeReductionKeepsPriority) {
+  MatchingEngine me(1);
+  auto a = submit(me, limit(1, Side::Buy, 10000, 10));
+  auto b = submit(me, limit(1, Side::Buy, 10000, 10));
+  me.process(replace(1, a, Side::Buy, 10000, 5));
+  EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({a,b}));
+  ASSERT_NE(me.find(a), nullptr);
+  EXPECT_EQ(me.find(a)->leaves, 5u);
+}
+
+TEST(Regression, SizeIncreaseLosesPriority) {
+  MatchingEngine me(1);
+  auto a = submit(me, limit(1, Side::Buy, 10000, 10));
+  auto b = submit(me, limit(1, Side::Buy, 10000, 10));
+  me.process(replace(1, a, Side::Buy, 10000, 20));
+  EXPECT_EQ(queue_at_best(me, Side::Buy), std::vector<OrderId>({b,a}));
+  ASSERT_NE(me.find(a), nullptr);
+  EXPECT_EQ(me.find(a)->leaves, 20u);
+}

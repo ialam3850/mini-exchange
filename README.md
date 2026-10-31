@@ -9,6 +9,8 @@ A C++20 matching engine with FIX order entry and sequenced market data.
 - Sorted price levels and FIFO order links
 - Limit-order matching and execution reports
 - Cancellation with ownership checks
+- Market and IOC orders
+- FOK availability checks
 
 ## Build
 
